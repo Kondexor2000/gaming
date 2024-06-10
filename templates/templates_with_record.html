@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Records with Lower Prices</title>
+</head>
+<body>
+    <h2>Records with Lower Prices</h2>
+    <!-- Display products with lower prices -->
+    {% for component in products_with_lower_prices %}
+        <p>{{ component }}</p>
+    {% endfor %}
+</body>
+</html>

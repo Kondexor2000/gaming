@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Edit Profile</title>
+</head>
+<body>
+    <ul>
+        {% for store in stores %}
+            <li>{{store.id}} - {{ store.title }} - {{ store.user }}</li>
+        {% endfor %}
+    </ul>
+</body>
+</html>

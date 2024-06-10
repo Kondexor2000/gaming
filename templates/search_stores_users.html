@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Search Results</title>
+</head>
+<body>
+    <h2>Search Results</h2>
+    
+    <!-- Formularz wyszukiwania -->
+    <form action="{% url 'search-products' %}" method="get">
+        <label for="search_query">Search:</label>
+        <input type="text" id="search_query" name="q" placeholder="Enter your search query">
+        <button type="submit">Search</button>
+    </form>
+
+    <!-- Wyświetlanie wyników wyszukiwania -->
+    {% if products %}
+        <ul>
+            {% for product in products %}
+                <li>{{ product }}</li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>No results found for "{{ query }}"</p>
+    {% endif %}
+</body>
