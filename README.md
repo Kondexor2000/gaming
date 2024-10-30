@@ -22,7 +22,7 @@ A brief description of the project and its purpose. A short overview of what the
 **Clone the repository:**
 
 ```bash
-git clone https://github.com/username/gaming.git
+git clone https://github.com/Kondexor2000/gaming.git
 venv\Scripts\Active
 cd gaming
 mkdir requirements.txt
