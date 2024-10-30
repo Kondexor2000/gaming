@@ -1,4 +1,4 @@
-# Reservation
+# Gaming
 
 A brief description of the project and its purpose. A short overview of what the project does and what problems it solves.
 
