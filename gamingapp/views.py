@@ -59,7 +59,7 @@ class CustomLogoutView(LoginRequiredMixin, LogoutView):
 class EditProfileView(LoginRequiredMixin, UpdateView):
     form_class = UserChangeForm
     template_name = 'edit_profile.html'
-    success_url = reverse_lazy('notifications')
+    success_url = reverse_lazy('category')
 
     def dispatch(self, request, *args, **kwargs):
         if not check_template(self.template_name, request):
@@ -69,6 +69,9 @@ class EditProfileView(LoginRequiredMixin, UpdateView):
             messages.error(request, 'Nie jesteś zalogowany.')
             return redirect('login')
         return super().dispatch(request, *args, **kwargs)
+
+    def get_object(self):
+        return self.request.user
 
 class DeleteAccountView(LoginRequiredMixin, DeleteView):
     template_name = 'delete_account.html'
