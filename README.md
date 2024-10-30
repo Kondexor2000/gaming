@@ -1,29 +1,39 @@
-# My Django Project
+# Reservation
 
-A brief description of what this project does and who it's for.
+A brief description of the project and its purpose. A short overview of what the project does and what problems it solves.
 
-## Features
+## Table of Contents
 
-- bee
-- bee_images
-- beeapp
-- templates
+- [Requirements](#requirements)
+- [Installation](#installation)
+- [Usage](#usage)
+- [Testing](#testing)
+- [Contribution](#contribution)
+- [License](#license)
 
-## Prerequisites
+## Requirements
 
 - Python 3.x
-- Django 3.x or higher
-- SQLite
+- Django 4.x
+- PyTest
 
 ## Installation
 
-### Clone the repository
+**Clone the repository:**
 
 ```bash
-git clone https://github.com/Kondexor2000/gaming.git
-venv\Scripts\Activate
+git clone https://github.com/username/SocialService.git
+venv\Scripts\Active
 cd gaming
-
-python manage.py makemigration
+mkdir requirements.txt
+pip freeze > requirements.txt
+pip install -r requirements.txt
 python manage.py migrate
+python manage.py makemigrations
+pytest
 python manage.py runserver
+
+### Notes for Usage
+- **Project Name**: Replace with your project's actual name.
+- **Description**: Fill in with a brief description of what your project does.
+- **Requirements**: List any additional libraries or dependencies specific to your project.
