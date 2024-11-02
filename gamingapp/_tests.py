@@ -76,3 +76,35 @@ def test_explore_stores_view(logged_in_client):
 def test_explore_store_view(logged_in_client, store):
     response = logged_in_client.get(reverse('store-detail', args=[store.pk]))
     assert response.status_code == 200
+
+@pytest.mark.django_db
+def test_store_creation():
+    user = User.objects.create_user(username='testuser', password='testpassword')
+    store = Store.objects.create(title='Test Store', user=user)
+    assert store.title == 'Test Store'
+    assert store.user == user
+
+@pytest.mark.django_db
+def test_laptop_creation():
+    user = User.objects.create_user(username='testuser', password='testpassword')
+    store = Store.objects.create(title='Test Store', user=user)
+    laptop = Laptop.objects.create(
+        owner=store,
+        name='Test Laptop',
+        cale=15.6,
+        price=1500.00,
+        processor=4,
+        graphics_card=2,
+        ram=16,
+        rom=512,
+        url='http://example.com/laptop'
+    )
+    assert laptop.owner == store
+    assert laptop.name == 'Test Laptop'
+    assert laptop.cale == 15.6
+    assert laptop.price == 1500.00
+    assert laptop.processor == 4
+    assert laptop.graphics_card == 2
+    assert laptop.ram == 16
+    assert laptop.rom == 512
+    assert laptop.url == 'http://example.com/laptop'
