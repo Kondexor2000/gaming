@@ -6,38 +6,25 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import transaction
 from .models import Store, Laptop
 from .forms import LaptopForm, StoreForm
-from django.http import Http404, HttpResponse
+from django.http import Http404, HttpResponse, HttpResponseNotFound
 from django.template.loader import get_template
 from django.template import TemplateDoesNotExist
 from django.contrib.auth.views import LogoutView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.views import LoginView
 from django.contrib.auth.forms import UserCreationForm, UserChangeForm
+import logging
 
-# Funkcja do sprawdzania istnienia szablonu HTML
+logger = logging.getLogger(__name__)
+
 def check_template(template_name, request):
     try:
         get_template(template_name)
+        logger.info(f"Template '{template_name}' found for user {request.user}.")
+        return True
     except TemplateDoesNotExist:
-        messages.error(request, 'Brak pliku HTML')
+        logger.error(f"Template '{template_name}' does not exist for user {request.user}.")
         return False
-    return True
-
-class CustomLoginView(LoginView):
-    template_name = 'login.html'
-    redirect_authenticated_user = True
-
-    def form_valid(self, form):
-        if not check_template(self.template_name, self.request):
-            return HttpResponse("Brak pliku .html")
-
-        remember_me = form.cleaned_data.get('remember_me', False)
-        if remember_me:
-            self.request.session.set_expiry(1209600)
-        return super().form_valid(form)
-
-    def get_success_url(self):
-        return reverse_lazy('store-list')
 
 class SignUpView(CreateView):
     form_class = UserCreationForm
@@ -46,56 +33,72 @@ class SignUpView(CreateView):
 
     def dispatch(self, request, *args, **kwargs):
         if not check_template(self.template_name, request):
-            return HttpResponse("Brak pliku .html")
-
+            return HttpResponse("Template not found.")
         if request.user.is_authenticated:
-            return redirect('logout')
-
+            messages.info(request, "You are already registered and logged in.")
+            return redirect('add-post')
         return super().dispatch(request, *args, **kwargs)
 
-class CustomLogoutView(LoginRequiredMixin, LogoutView):
-    next_page = 'login'
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        messages.success(self.request, "Registration successful. Please log in.")
+        return response
 
 class EditProfileView(LoginRequiredMixin, UpdateView):
     form_class = UserChangeForm
     template_name = 'edit_profile.html'
-    success_url = reverse_lazy('category')
-
-    def dispatch(self, request, *args, **kwargs):
-        if not check_template(self.template_name, request):
-            return HttpResponse("Brak pliku .html")
-
-        if not request.user.is_authenticated:
-            messages.error(request, 'Nie jesteś zalogowany.')
-            return redirect('login')
-        return super().dispatch(request, *args, **kwargs)
+    success_url = reverse_lazy('add-post')
 
     def get_object(self):
         return self.request.user
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        messages.success(self.request, "Profile updated successfully.")
+        return response
 
 class DeleteAccountView(LoginRequiredMixin, DeleteView):
     template_name = 'delete_account.html'
     success_url = reverse_lazy('login_existing')
 
-    def dispatch(self, request, *args, **kwargs):
-        if not check_template(self.template_name, request):
-            return redirect('post_detail')
-
-        return super().dispatch(request, *args, **kwargs)
-
     def get_object(self, queryset=None):
-        user = self.request.user
-        if user.is_authenticated:
-            return user
-        else:
-            raise Http404("Nie jesteś zalogowany.")
+        if self.request.user.is_authenticated:
+            return self.request.user
+        raise Http404("You are not logged in.")
 
     def delete(self, request, *args, **kwargs):
         try:
-            return super().delete(request, *args, **kwargs)
+            response = super().delete(request, *args, **kwargs)
+            messages.success(request, "Account deleted successfully.")
+            return response
         except Exception as e:
-            messages.error(request, f"Wystąpił błąd: {str(e)}")
+            logger.error(f"An error occurred during account deletion: {str(e)}")
+            messages.error(request, f"An error occurred: {str(e)}")
             return redirect('delete_account')
+
+class CustomLoginView(LoginView):
+    template_name = 'login.html'
+    redirect_authenticated_user = True
+
+    def form_valid(self, form):
+        if not check_template(self.template_name, self.request):
+            return HttpResponse("Template not found.")
+        
+        remember_me = form.cleaned_data.get('remember_me', False)
+        if remember_me:
+            self.request.session.set_expiry(1209600)  # 2 weeks in seconds
+        messages.success(self.request, "Login successful.")
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse_lazy('add_post')
+
+class CustomLogoutView(LoginRequiredMixin, LogoutView):
+    next_page = 'login'
+
+    def dispatch(self, request, *args, **kwargs):
+        messages.info(request, "You have been logged out.")
+        return super().dispatch(request, *args, **kwargs)
 
 class AddLaptopView(LoginRequiredMixin, CreateView):
     form_class = LaptopForm
@@ -103,16 +106,18 @@ class AddLaptopView(LoginRequiredMixin, CreateView):
 
     def form_valid(self, form):
         store_id = self.kwargs.get('store_pk')
-        store = get_object_or_404(Store, pk=store_id, user=self.request.user)
-        form.instance.owner = store
-        response = super().form_valid(form)
+        try:
+            store = get_object_or_404(Store, pk=store_id, user=self.request.user)
+            form.instance.owner = store
+            response = super().form_valid(form)
+            logger.info(f"User {self.request.user} created a laptop on store {store_id}.")
 
-        # Nie ustawiamy success_url tutaj
-
-        return response
+            return response
+        except Exception as e:
+            logger.error(f"Error creating laptop for store {store_id} by user {self.request.user}: {e}")
+            raise
 
     def get_success_url(self):
-        # Zwracamy odpowiednią ścieżkę z identyfikatorem nowo utworzonego produktu
         store_id = self.kwargs.get('store_pk')
         product_id = self.object.pk
         return reverse('lower-prices', kwargs={'store_pk': store_id, 'product_pk': product_id})
@@ -124,11 +129,11 @@ class AddLaptopView(LoginRequiredMixin, CreateView):
     
 class StoreListView(ListView):
     model = Store
-    template_name = 'store_list.html'  # Twój szablon HTML dla listy sklepów
-    context_object_name = 'stores'  # Nazwa zmiennej kontekstu, która będzie zawierać listę sklepów
+    template_name = 'store_list.html'  
+    context_object_name = 'stores' 
 
     def get_queryset(self):
-        return Store.objects.all()  # Pobierz wszystkie sklepy
+        return Store.objects.all()  
     
 class UpdateLaptopView(LoginRequiredMixin, UpdateView):
     model = Laptop
@@ -185,14 +190,13 @@ class DeleteLaptopView(LoginRequiredMixin, DeleteView):
 class AddStoreView(LoginRequiredMixin, CreateView):
     form_class = StoreForm
     template_name = 'add_store.html'
-    success_url = reverse_lazy('store-list')  # Poprawiono przekierowanie po sukcesie
+    success_url = reverse_lazy('store-list') 
 
     def form_valid(self, form):
         form.instance.user = self.request.user
         return super().form_valid(form)
     
     def dispatch(self, request, *args, **kwargs):
-        # Sprawdź czy szablon jest poprawnie załadowany
         if not check_template(self.template_name, request):
             return HttpResponse("Brak pliku .html")
         return super().dispatch(request, *args, **kwargs)
@@ -207,7 +211,8 @@ def display_first_record_with_lower_price(request, store_pk, product_pk):
     if request.user.is_authenticated:
         template_name = 'templates_with_first_record.html'
         if not check_template(template_name, request):
-            return HttpResponse("Brak pliku .html")
+            logger.warning(f"Template '{template_name}' not found for user {request.user}.")
+            return HttpResponseNotFound("Template not found.")
 
         try:
             product = get_object_or_404(Laptop, pk=product_pk, owner__pk=store_pk)
@@ -220,8 +225,10 @@ def display_first_record_with_lower_price(request, store_pk, product_pk):
                 rom__gte=product.rom
             ).first()
             
+            logger.info(f"Records retrieved successfully for user {request.user}.")
             return render(request, 'templates_with_first_record.html', {'component': first_product_with_lower_price})
         except Laptop.DoesNotExist:
+            logger.error(f"Error retrieving categories for user {request.user}")
             messages.error(request, 'Laptop o podanym identyfikatorze nie istnieje.')
             return redirect('login')
     else:
@@ -233,7 +240,8 @@ def display_second_and_subsequent_records_with_lower_prices(request, store_pk, p
     if request.user.is_authenticated:
         template_name = 'templates_with_record.html'
         if not check_template(template_name, request):
-            return HttpResponse("Brak pliku .html")
+            logger.warning(f"Template '{template_name}' not found for user {request.user}.")
+            return HttpResponseNotFound("Template not found.")
 
         try:
             product = get_object_or_404(Laptop, pk=product_pk, owner__pk=store_pk)
@@ -246,8 +254,10 @@ def display_second_and_subsequent_records_with_lower_prices(request, store_pk, p
                 rom__gte=product.rom
             )[1:]
             
+            logger.info(f"Records retrieved successfully for user {request.user}.")
             return render(request, 'templates_with_record.html', {'components': products_with_lower_prices})
         except Laptop.DoesNotExist:
+            logger.error(f"Error retrieving categories for user {request.user}")
             messages.error(request, 'Laptop o podanym identyfikatorze nie istnieje.')
             return redirect('login')
     else:
@@ -258,10 +268,15 @@ def display_second_and_subsequent_records_with_lower_prices(request, store_pk, p
 def search_laptops(request, store_pk):
     template_name = 'search_laptops.html'
     if not check_template(template_name, request):
-        return HttpResponse("Brak pliku .html")
+        logger.warning(f"Template '{template_name}' not found for user {request.user}.")
+        return HttpResponseNotFound("Template not found.")
 
-    # Use store_pk to filter laptops for a specific store
-    products = Laptop.objects.filter(owner__pk=store_pk)
+    try:
+        products = Laptop.objects.filter(owner__pk=store_pk)
+        logger.info(f"Products retrieved successfully for user {request.user}.")
+    except Exception as e:
+        logger.error(f"Error retrieving categories for user {request.user}: {e}")
+        return HttpResponse("An error occurred while retrieving categories.", status=500)
 
     return render(request, template_name, {'products': products})
 
@@ -269,9 +284,15 @@ def search_laptops(request, store_pk):
 def search_stores_for_request_user(request):
     template_name = 'search_stores_users.html'
     if not check_template(template_name, request):
-        return HttpResponse("Brak pliku .html")
-
-    products = Store.objects.filter(user=request.user)
+        logger.warning(f"Template '{template_name}' not found for user {request.user}.")
+        return HttpResponseNotFound("Template not found.")
+    
+    try:
+        products = Store.objects.filter(user=request.user)
+        logger.info(f"Products retrieved successfully for user {request.user}.")
+    except Exception as e:
+        logger.error(f"Error retrieving categories for user {request.user}: {e}")
+        return HttpResponse("An error occurred while retrieving categories.", status=500)
 
     return render(request, template_name, {'products': products})
 
@@ -280,8 +301,15 @@ def search_stores_for_request_user(request):
 def search_stores(request):
     template_name = 'search_stores.html'
     if not check_template(template_name, request):
-        return HttpResponse("Brak pliku .html")
+        logger.warning(f"Template '{template_name}' not found for user {request.user}.")
+        return HttpResponseNotFound("Template not found.")
 
-    query = request.GET.get('q')
-    products = Store.objects.filter(name__icontains=query) if query else Store.objects.all()
+    try:
+        query = request.GET.get('q')
+        products = Store.objects.filter(name__icontains=query) if query else Store.objects.all()
+        logger.info(f"Products retrieved successfully for user {request.user}.")
+    except Exception as e:
+        logger.error(f"Error retrieving categories for user {request.user}: {e}")
+        return HttpResponse("An error occurred while retrieving categories.", status=500)
+    
     return render(request, template_name, {'products': products, 'query': query})
