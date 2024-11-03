@@ -86,7 +86,7 @@ class CustomLoginView(LoginView):
         
         remember_me = form.cleaned_data.get('remember_me', False)
         if remember_me:
-            self.request.session.set_expiry(1209600)  # 2 weeks in seconds
+            self.request.session.set_expiry(1209600)  
         messages.success(self.request, "Login successful.")
         return super().form_valid(form)
 
