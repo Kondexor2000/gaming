@@ -1,0 +1,162 @@
+ERROR 2024-11-05 19:52:55,146 log Internal Server Error: /
+ERROR 2024-11-05 19:52:55,147 basehttp "GET / HTTP/1.1" 500 46
+ERROR 2024-11-05 19:58:03,519 log Internal Server Error: /
+ERROR 2024-11-05 19:58:03,520 basehttp "GET / HTTP/1.1" 500 46
+ERROR 2024-11-05 19:58:47,455 log Internal Server Error: /
+ERROR 2024-11-05 19:58:47,456 basehttp "GET / HTTP/1.1" 500 46
+ERROR 2024-11-05 19:59:14,009 log Internal Server Error: /
+ERROR 2024-11-05 19:59:14,010 basehttp "GET / HTTP/1.1" 500 46
+ERROR 2024-11-05 20:00:18,286 log Internal Server Error: /
+ERROR 2024-11-05 20:00:18,287 basehttp "GET / HTTP/1.1" 500 46
+ERROR 2025-01-15 19:00:57,841 log Internal Server Error: /signup/
+Traceback (most recent call last):
+  File "C:\Users\kondz\venv\lib\site-packages\django_redis\cache.py", line 29, in _decorator
+    return method(self, *args, **kwargs)
+  File "C:\Users\kondz\venv\lib\site-packages\django_redis\cache.py", line 81, in set
+    return self.client.set(*args, **kwargs)
+  File "C:\Users\kondz\venv\lib\site-packages\django_redis\client\default.py", line 185, in set
+    raise ConnectionInterrupted(connection=client) from e
+django_redis.exceptions.ConnectionInterrupted: Redis ConnectionError: Error 10061 connecting to 127.0.0.1:6379. Nie mo¿na nawi¹zaæ po³¹czenia, poniewa¿ komputer docelowy aktywnie go odmawia.
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\kondz\venv\lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\kondz\venv\lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\kondz\venv\lib\site-packages\django\views\generic\base.py", line 104, in view
+    return self.dispatch(request, *args, **kwargs)
+  File "C:\Users\kondz\gaming\gamingapp\views.py", line 39, in dispatch
+    if not check_template(self.template_name, request):
+  File "C:\Users\kondz\gaming\gamingapp\views.py", line 26, in check_template
+    cache.set(f"template_exists_{template_name}", True, timeout=3600)
+  File "C:\Users\kondz\venv\lib\site-packages\django_redis\cache.py", line 36, in _decorator
+    raise e.__cause__
+  File "C:\Users\kondz\venv\lib\site-packages\django_redis\client\default.py", line 175, in set
+    return bool(client.set(nkey, nvalue, nx=nx, px=timeout, xx=xx))
+  File "C:\Users\kondz\venv\lib\site-packages\redis\commands\core.py", line 2335, in set
+    return self.execute_command("SET", *pieces, **options)
+  File "C:\Users\kondz\venv\lib\site-packages\redis\client.py", line 559, in execute_command
+    return self._execute_command(*args, **options)
+  File "C:\Users\kondz\venv\lib\site-packages\redis\client.py", line 565, in _execute_command
+    conn = self.connection or pool.get_connection(command_name, **options)
+  File "C:\Users\kondz\venv\lib\site-packages\redis\connection.py", line 1422, in get_connection
+    connection.connect()
+  File "C:\Users\kondz\venv\lib\site-packages\redis\connection.py", line 363, in connect
+    raise ConnectionError(self._error_message(e))
+redis.exceptions.ConnectionError: Error 10061 connecting to 127.0.0.1:6379. Nie mo¿na nawi¹zaæ po³¹czenia, poniewa¿ komputer docelowy aktywnie go odmawia.
+ERROR 2025-01-15 19:01:02,744 log Internal Server Error: /
+Traceback (most recent call last):
+  File "C:\Users\kondz\venv\lib\site-packages\django_redis\cache.py", line 29, in _decorator
+    return method(self, *args, **kwargs)
+  File "C:\Users\kondz\venv\lib\site-packages\django_redis\cache.py", line 81, in set
+    return self.client.set(*args, **kwargs)
+  File "C:\Users\kondz\venv\lib\site-packages\django_redis\client\default.py", line 185, in set
+    raise ConnectionInterrupted(connection=client) from e
+django_redis.exceptions.ConnectionInterrupted: Redis ConnectionError: Error 10061 connecting to 127.0.0.1:6379. Nie mo¿na nawi¹zaæ po³¹czenia, poniewa¿ komputer docelowy aktywnie go odmawia.
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\kondz\venv\lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\kondz\venv\lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.9_3.9.3568.0_x64__qbz5n2kfra8p0\lib\contextlib.py", line 79, in inner
+    return func(*args, **kwds)
+  File "C:\Users\kondz\gaming\gamingapp\views.py", line 348, in search_stores_for_request_user
+    if not check_template(template_name, request):
+  File "C:\Users\kondz\gaming\gamingapp\views.py", line 26, in check_template
+    cache.set(f"template_exists_{template_name}", True, timeout=3600)
+  File "C:\Users\kondz\venv\lib\site-packages\django_redis\cache.py", line 36, in _decorator
+    raise e.__cause__
+  File "C:\Users\kondz\venv\lib\site-packages\django_redis\client\default.py", line 175, in set
+    return bool(client.set(nkey, nvalue, nx=nx, px=timeout, xx=xx))
+  File "C:\Users\kondz\venv\lib\site-packages\redis\commands\core.py", line 2335, in set
+    return self.execute_command("SET", *pieces, **options)
+  File "C:\Users\kondz\venv\lib\site-packages\redis\client.py", line 559, in execute_command
+    return self._execute_command(*args, **options)
+  File "C:\Users\kondz\venv\lib\site-packages\redis\client.py", line 565, in _execute_command
+    conn = self.connection or pool.get_connection(command_name, **options)
+  File "C:\Users\kondz\venv\lib\site-packages\redis\connection.py", line 1422, in get_connection
+    connection.connect()
+  File "C:\Users\kondz\venv\lib\site-packages\redis\connection.py", line 363, in connect
+    raise ConnectionError(self._error_message(e))
+redis.exceptions.ConnectionError: Error 10061 connecting to 127.0.0.1:6379. Nie mo¿na nawi¹zaæ po³¹czenia, poniewa¿ komputer docelowy aktywnie go odmawia.
+ERROR 2025-01-15 19:02:24,295 log Internal Server Error: /signup/
+Traceback (most recent call last):
+  File "C:\Users\kondz\venv\lib\site-packages\django_redis\cache.py", line 29, in _decorator
+    return method(self, *args, **kwargs)
+  File "C:\Users\kondz\venv\lib\site-packages\django_redis\cache.py", line 81, in set
+    return self.client.set(*args, **kwargs)
+  File "C:\Users\kondz\venv\lib\site-packages\django_redis\client\default.py", line 185, in set
+    raise ConnectionInterrupted(connection=client) from e
+django_redis.exceptions.ConnectionInterrupted: Redis ConnectionError: Error 10061 connecting to 127.0.0.1:6379. Nie mo¿na nawi¹zaæ po³¹czenia, poniewa¿ komputer docelowy aktywnie go odmawia.
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\kondz\venv\lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\kondz\venv\lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\kondz\venv\lib\site-packages\django\views\generic\base.py", line 104, in view
+    return self.dispatch(request, *args, **kwargs)
+  File "C:\Users\kondz\gaming\gamingapp\views.py", line 39, in dispatch
+    if not check_template(self.template_name, request):
+  File "C:\Users\kondz\gaming\gamingapp\views.py", line 26, in check_template
+    cache.set(f"template_exists_{template_name}", True, timeout=3600)
+  File "C:\Users\kondz\venv\lib\site-packages\django_redis\cache.py", line 36, in _decorator
+    raise e.__cause__
+  File "C:\Users\kondz\venv\lib\site-packages\django_redis\client\default.py", line 175, in set
+    return bool(client.set(nkey, nvalue, nx=nx, px=timeout, xx=xx))
+  File "C:\Users\kondz\venv\lib\site-packages\redis\commands\core.py", line 2335, in set
+    return self.execute_command("SET", *pieces, **options)
+  File "C:\Users\kondz\venv\lib\site-packages\redis\client.py", line 559, in execute_command
+    return self._execute_command(*args, **options)
+  File "C:\Users\kondz\venv\lib\site-packages\redis\client.py", line 565, in _execute_command
+    conn = self.connection or pool.get_connection(command_name, **options)
+  File "C:\Users\kondz\venv\lib\site-packages\redis\connection.py", line 1422, in get_connection
+    connection.connect()
+  File "C:\Users\kondz\venv\lib\site-packages\redis\connection.py", line 363, in connect
+    raise ConnectionError(self._error_message(e))
+redis.exceptions.ConnectionError: Error 10061 connecting to 127.0.0.1:6379. Nie mo¿na nawi¹zaæ po³¹czenia, poniewa¿ komputer docelowy aktywnie go odmawia.
+ERROR 2025-01-15 19:02:28,631 log Internal Server Error: /
+Traceback (most recent call last):
+  File "C:\Users\kondz\venv\lib\site-packages\django_redis\cache.py", line 29, in _decorator
+    return method(self, *args, **kwargs)
+  File "C:\Users\kondz\venv\lib\site-packages\django_redis\cache.py", line 81, in set
+    return self.client.set(*args, **kwargs)
+  File "C:\Users\kondz\venv\lib\site-packages\django_redis\client\default.py", line 185, in set
+    raise ConnectionInterrupted(connection=client) from e
+django_redis.exceptions.ConnectionInterrupted: Redis ConnectionError: Error 10061 connecting to 127.0.0.1:6379. Nie mo¿na nawi¹zaæ po³¹czenia, poniewa¿ komputer docelowy aktywnie go odmawia.
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\kondz\venv\lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\kondz\venv\lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.9_3.9.3568.0_x64__qbz5n2kfra8p0\lib\contextlib.py", line 79, in inner
+    return func(*args, **kwds)
+  File "C:\Users\kondz\gaming\gamingapp\views.py", line 348, in search_stores_for_request_user
+    if not check_template(template_name, request):
+  File "C:\Users\kondz\gaming\gamingapp\views.py", line 26, in check_template
+    cache.set(f"template_exists_{template_name}", True, timeout=3600)
+  File "C:\Users\kondz\venv\lib\site-packages\django_redis\cache.py", line 36, in _decorator
+    raise e.__cause__
+  File "C:\Users\kondz\venv\lib\site-packages\django_redis\client\default.py", line 175, in set
+    return bool(client.set(nkey, nvalue, nx=nx, px=timeout, xx=xx))
+  File "C:\Users\kondz\venv\lib\site-packages\redis\commands\core.py", line 2335, in set
+    return self.execute_command("SET", *pieces, **options)
+  File "C:\Users\kondz\venv\lib\site-packages\redis\client.py", line 559, in execute_command
+    return self._execute_command(*args, **options)
+  File "C:\Users\kondz\venv\lib\site-packages\redis\client.py", line 565, in _execute_command
+    conn = self.connection or pool.get_connection(command_name, **options)
+  File "C:\Users\kondz\venv\lib\site-packages\redis\connection.py", line 1422, in get_connection
+    connection.connect()
+  File "C:\Users\kondz\venv\lib\site-packages\redis\connection.py", line 363, in connect
+    raise ConnectionError(self._error_message(e))
+redis.exceptions.ConnectionError: Error 10061 connecting to 127.0.0.1:6379. Nie mo¿na nawi¹zaæ po³¹czenia, poniewa¿ komputer docelowy aktywnie go odmawia.

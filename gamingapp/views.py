@@ -4,8 +4,8 @@ from django.urls import reverse, reverse_lazy
 from django.views.generic import CreateView, UpdateView, DeleteView, ListView, DetailView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import transaction
-from .models import Store, Laptop
-from .forms import LaptopForm, StoreForm
+from .models import Store, Laptop, Review, User
+from .forms import LaptopForm, StoreForm, ReviewForm
 from django.http import Http404, HttpResponse, HttpResponseNotFound
 from django.template.loader import get_template
 from django.template import TemplateDoesNotExist
@@ -14,6 +14,8 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.views import LoginView
 from django.contrib.auth.forms import UserCreationForm, UserChangeForm
 import logging
+from django.db.models import Q
+from django.core.cache import cache
 
 logger = logging.getLogger(__name__)
 
@@ -21,9 +23,11 @@ def check_template(template_name, request):
     try:
         get_template(template_name)
         logger.info(f"Template '{template_name}' found for user {request.user}.")
+        cache.set(f"template_exists_{template_name}", True, timeout=3600)
         return True
     except TemplateDoesNotExist:
         logger.error(f"Template '{template_name}' does not exist for user {request.user}.")
+        cache.set(f"template_exists_{template_name}", False, timeout=3600)
         return False
 
 class SignUpView(CreateView):
@@ -66,14 +70,14 @@ class DeleteAccountView(LoginRequiredMixin, DeleteView):
             return self.request.user
         raise Http404("You are not logged in.")
 
-    def delete(self, request, *args, **kwargs):
+    def form_valid(self, form):
         try:
-            response = super().delete(request, *args, **kwargs)
-            messages.success(request, "Account deleted successfully.")
+            response = super().form_valid(form)
+            messages.success(self.request, "Account deleted successfully.")
             return response
         except Exception as e:
             logger.error(f"An error occurred during account deletion: {str(e)}")
-            messages.error(request, f"An error occurred: {str(e)}")
+            messages.error(self.request, f"An error occurred: {str(e)}")
             return redirect('delete_account')
 
 class CustomLoginView(LoginView):
@@ -84,9 +88,9 @@ class CustomLoginView(LoginView):
         if not check_template(self.template_name, self.request):
             return HttpResponse("Template not found.")
         
-        remember_me = form.cleaned_data.get('remember_me', False)
+        remember_me = form.cleaned_data.get('remember_me')
         if remember_me:
-            self.request.session.set_expiry(1209600)  
+            self.request.session.set_expiry(1209600 if remember_me else 0)  
         messages.success(self.request, "Login successful.")
         return super().form_valid(form)
 
@@ -176,7 +180,8 @@ class DeleteLaptopView(LoginRequiredMixin, DeleteView):
         if product.owner.user == self.request.user:
             return super().delete(request, *args, **kwargs)
         else:
-            return HttpResponse("You are not authorized to delete this product.")
+            messages.error(request, "You are not authorized to delete this product.")
+            return redirect('store-list')
 
     def get_success_url(self):
         store_id = self.get_object().owner.pk
@@ -196,6 +201,60 @@ class AddStoreView(LoginRequiredMixin, CreateView):
         form.instance.user = self.request.user
         return super().form_valid(form)
     
+    def dispatch(self, request, *args, **kwargs):
+        if not check_template(self.template_name, request):
+            return HttpResponse("Brak pliku .html")
+        return super().dispatch(request, *args, **kwargs)
+
+class AddReviewView(LoginRequiredMixin, CreateView):
+    form_class = ReviewForm
+    template_name = 'add_review.html'
+
+    def form_valid(self, form):
+        product_id = self.kwargs.get('product_pk')
+        try:
+            product = get_object_or_404(Laptop, pk=product_id, user=self.request.user)
+            form.instance.owner = product
+            response = super().form_valid(form)
+            logger.info(f"User {self.request.user} created a laptop on store {product_id}.")
+
+            return response
+        except Exception as e:
+            logger.error(f"Error creating laptop for store {product_id} by user {self.request.user}: {e}")
+            raise
+
+    def get_success_url(self):
+        product_id = self.kwargs.get('product_pk')
+        review_id = self.object.pk
+        return reverse('user-review', kwargs={'product_pk': product_id, 'review_pk': review_id})
+
+    def dispatch(self, request, *args, **kwargs):
+        if not check_template(self.template_name, request):
+            return HttpResponse("Brak pliku .html")
+        return super().dispatch(request, *args, **kwargs)
+    
+class UpdateReviewView(LoginRequiredMixin, UpdateView):
+    model = Review
+    form_class = ReviewForm
+    template_name = 'update_review.html'
+
+    def get_object(self, queryset=None):
+        product_pk = self.kwargs.get('product_pk')
+        review_pk = self.kwargs.get('review_pk')
+        return get_object_or_404(Review, pk=review_pk, laptop__pk=product_pk)
+
+    def form_valid(self, form):
+        review = self.get_object().user
+        if review.user == self.request.user:
+            return super().form_valid(form)
+        else:
+            return HttpResponse("Nie jesteś upoważniony do aktualizacji recenzji")
+
+    def get_success_url(self):
+        store_id = self.kwargs.get('store_pk')
+        product_id = self.object.pk
+        return reverse('review-update', kwargs={'store_pk': store_id, 'product_pk': product_id})
+
     def dispatch(self, request, *args, **kwargs):
         if not check_template(self.template_name, request):
             return HttpResponse("Brak pliku .html")
@@ -228,6 +287,7 @@ def display_first_record_with_lower_price(request, store_pk, product_pk):
             logger.info(f"Records retrieved successfully for user {request.user}.")
             return render(request, 'templates_with_first_record.html', {'component': first_product_with_lower_price})
         except Laptop.DoesNotExist:
+            first_product_with_lower_price = []
             logger.error(f"Error retrieving categories for user {request.user}")
             messages.error(request, 'Laptop o podanym identyfikatorze nie istnieje.')
             return redirect('login')
@@ -252,11 +312,12 @@ def display_second_and_subsequent_records_with_lower_prices(request, store_pk, p
                 processor__gte=product.processor, 
                 ram__gte=product.ram, 
                 rom__gte=product.rom
-            )[1:]
+            ).order_by('price')[1:]
             
             logger.info(f"Records retrieved successfully for user {request.user}.")
             return render(request, 'templates_with_record.html', {'components': products_with_lower_prices})
         except Laptop.DoesNotExist:
+            products_with_lower_prices = []
             logger.error(f"Error retrieving categories for user {request.user}")
             messages.error(request, 'Laptop o podanym identyfikatorze nie istnieje.')
             return redirect('login')
@@ -275,6 +336,7 @@ def search_laptops(request, store_pk):
         products = Laptop.objects.filter(owner__pk=store_pk)
         logger.info(f"Products retrieved successfully for user {request.user}.")
     except Exception as e:
+        products = []
         logger.error(f"Error retrieving categories for user {request.user}: {e}")
         return HttpResponse("An error occurred while retrieving categories.", status=500)
 
@@ -291,6 +353,7 @@ def search_stores_for_request_user(request):
         products = Store.objects.filter(user=request.user)
         logger.info(f"Products retrieved successfully for user {request.user}.")
     except Exception as e:
+        products = []
         logger.error(f"Error retrieving categories for user {request.user}: {e}")
         return HttpResponse("An error occurred while retrieving categories.", status=500)
 
@@ -305,11 +368,29 @@ def search_stores(request):
         return HttpResponseNotFound("Template not found.")
 
     try:
-        query = request.GET.get('q')
-        products = Store.objects.filter(name__icontains=query) if query else Store.objects.all()
+        query = request.GET.get('q', '').strip()
+        products = Store.objects.filter(Q(name__icontains=query) | Q(description__icontains=query)) if query else Store.objects.all()
         logger.info(f"Products retrieved successfully for user {request.user}.")
     except Exception as e:
         logger.error(f"Error retrieving categories for user {request.user}: {e}")
+        products = []
         return HttpResponse("An error occurred while retrieving categories.", status=500)
     
     return render(request, template_name, {'products': products, 'query': query})
+
+def review_view(request, product_pk, user_pk):
+    template_name = 'read_review.html'
+
+    user = get_object_or_404(User, pk=user_pk)
+    laptop = get_object_or_404(Laptop, pk=product_pk)
+    review = Review.objects.filter(user=user, laptop=laptop)
+    return render(request, template_name, {'review': review})
+
+def review_request_user_view(request, product_pk):
+    template_name = 'read_request_user_review.html'
+
+    user = request.user
+    laptop = get_object_or_404(Laptop, pk=product_pk)
+    review = Review.objects.filter(user=user, laptop=laptop)
+    return render(request, template_name, {'review': review})
+
